@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #e8f4f8, #d0e8f0);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    #sidebar {
+      width: 260px;
+      min-height: 100vh;
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px 0;
+      flex-shrink: 0;
+    }
+
+    #sidebar h2 {
+      font-size: 22px;
+      font-weight: bold;
+      padding: 10px 20px 20px 20px;
+      color: white;
+    }
+
+    #sidebar ul { list-style: none; }
+
+    #sidebar ul li {
+      padding: 14px 20px;
+      cursor: pointer;
+      font-size: 16px;
+      color: #cdd6e0;
+      transition: background 0.2s;
+    }
+
+    #sidebar ul li:hover { background-color: #3d5166; }
+    #sidebar ul li.active { background-color: #3d5166; color: white; }
+
+    #main { flex: 1; display: flex; flex-direction: column; }
+
+    .page-header {
+      background-color: #2c3e50;
+      color: white;
+      text-align: center;
+      padding: 28px;
+      font-size: 26px;
+      font-weight: bold;
+      margin: 16px 16px 0 16px;
+      border-radius: 8px;
+    }
+
+    .content-card {
+      background: white;
+      border-radius: 10px;
+      padding: 32px;
+      margin: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    #page-home .content-card { text-align: center; }
+    #page-home .content-card h2 { font-size: 22px; color: #2c3e50; margin-bottom: 12px; }
+    #page-home .content-card p { color: #555; margin-bottom: 8px; font-size: 15px; }
+
+    #page-students table { width: 100%; border-collapse: collapse; }
+    #page-students table thead { background-color: #4a9fc4; color: white; }
+    #page-students table thead th { padding: 14px 12px; text-align: left; font-size: 15px; }
+    #page-students table tbody tr { border-bottom: 1px solid #eee; }
+    #page-students table tbody tr:nth-child(even) { background-color: #f5f5f5; }
+    #page-students table tbody td { padding: 14px 12px; font-size: 15px; color: #333; vertical-align: middle; }
+
+    #page-students .student-photo {
+      width: 48px; height: 48px;
+      border-radius: 50%; object-fit: cover;
+    }
+
+    .btn-edit {
+      background-color: #27ae60; color: white;
+      border: none; padding: 7px 16px;
+      border-radius: 4px; cursor: pointer; font-size: 14px;
+    }
+    .btn-edit:hover { background-color: #219150; }
+
+    .btn-delete {
+      background-color: #e74c3c; color: white;
+      border: none; padding: 7px 16px;
+      border-radius: 4px; cursor: pointer; font-size: 14px;
+    }
+    .btn-delete:hover { background-color: #c0392b; }
+
+    #page-settings .content-card h3 { font-size: 18px; color: #2c3e50; margin-bottom: 20px; }
+    #page-settings label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 15px; color: #222; }
+
+    #page-settings input[type="text"],
+    #page-settings input[type="email"],
+    #page-settings select {
+      width: 100%; padding: 12px 14px; margin-bottom: 20px;
+      border: 1px solid #d0d0d0; border-radius: 5px;
+      font-size: 15px; color: #444; background: white; outline: none;
+    }
+
+    #page-settings input:focus,
+    #page-settings select:focus { border-color: #4a9fc4; }
+
+    .btn-save {
+      background-color: #27ae60; color: white;
+      border: none; padding: 12px 24px;
+      border-radius: 5px; font-size: 15px; cursor: pointer;
+    }
+    .btn-save:hover { background-color: #219150; }
+
+    #page-logout .content-card { text-align: center; }
+    #page-logout .content-card h2 { color: #e74c3c; font-size: 22px; margin-bottom: 14px; }
+    #page-logout .content-card p { color: #555; margin-bottom: 20px; font-size: 15px; }
+
+    .btn-home {
+      background-color: #27ae60; color: white;
+      border: none; padding: 12px 28px;
+      border-radius: 6px; font-size: 15px; cursor: pointer;
+    }
+    .btn-home:hover { background-color: #219150; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    #edit-modal {
+      display: none; position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100; align-items: center; justify-content: center;
+    }
+    #edit-modal.open { display: flex; }
+
+    #edit-modal .modal-box {
+      background: white; border-radius: 10px;
+      padding: 30px; width: 400px; max-width: 95vw;
+    }
+    #edit-modal .modal-box h3 { margin-bottom: 16px; font-size: 18px; color: #2c3e50; }
+    #edit-modal label { display: block; font-weight: bold; margin-bottom: 5px; margin-top: 12px; font-size: 14px; }
+    #edit-modal input, #edit-modal select {
+      width: 100%; padding: 9px 12px;
+      border: 1px solid #d0d0d0; border-radius: 5px; font-size: 14px;
+    }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+    .btn-cancel {
+      background: #aaa; color: white; border: none;
+      padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h2>Dashboard</h2>
+  <ul>
+    <li class="active" onclick="showPage('home', this)">Home</li>
+    <li onclick="showPage('students', this)">Students</li>
+    <li onclick="showPage('settings', this)">Settings</li>
+    <li onclick="showPage('logout', this)">Logout</li>
+  </ul>
+</div>
+
+<div id="main">
+
+  <!-- HOME -->
+  <div id="page-home" class="page active">
+    <div class="page-header">Welcome to Student Dashboard</div>
+    <div class="content-card">
+      <h2>Hello Administrator 👋</h2>
+      <p>Use the sidebar to manage students, adjust settings, or securely logout.</p>
+      <p>This dashboard helps you track, update, and organize student information easily.</p>
+    </div>
+  </div>
+
+  <!-- STUDENTS -->
+  <div id="page-students" class="page">
+    <div class="page-header">Student Information Dashboard</div>
+    <div class="content-card" style="padding:0; overflow:hidden;">
+      <table id="students-table">
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Name</th>
+            <th>ID</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Gender</th>
+            <th>Edit</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody id="student-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="page-settings" class="page">
+    <div class="page-header">Settings</div>
+    <div class="content-card">
+      <h3>Profile Settings</h3>
+      <label for="settings-username">Username</label>
+      <input type="text" id="settings-username" placeholder="Your username" />
+      <label for="settings-email">Email</label>
+      <input type="email" id="settings-email" placeholder="Your email address" />
+      <label for="settings-theme">Theme</label>
+      <select id="settings-theme">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+      </select>
+      <button class="btn-save" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+
+  <!-- LOGOUT -->
+  <div id="page-logout" class="page">
+    <div class="page-header">Logout</div>
+    <div class="content-card">
+      <h2>You are now logged out.</h2>
+      <p>Thank you for using the Student Dashboard. Click below to return to the homepage or log back in.</p>
+      <button class="btn-home" onclick="showPage('home', document.querySelector('#sidebar ul li'))">Return to Home</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Edit Modal -->
+<div id="edit-modal">
+  <div class="modal-box">
+    <h3>Edit Student</h3>
+    <label>Name</label>
+    <input type="text" id="edit-name" />
+    <label>Location</label>
+    <input type="text" id="edit-location" />
+    <label>Status</label>
+    <select id="edit-status">
+      <option>Single</option>
+      <option>Married</option>
+    </select>
+    <label>Gender</label>
+    <select id="edit-gender">
+      <option>Male</option>
+      <option>Female</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="saveEdit()">Save</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let students = [
+    { id: 'C1240001', name: 'Ahmed Ali',  location: 'Hodan',   status: 'Single',  gender: 'Male',   photo: 'https://randomuser.me/api/portraits/men/32.jpg' },
+    { id: 'C1240002', name: 'Layla Noor', location: 'Kaxda',   status: 'Married', gender: 'Female', photo: 'https://randomuser.me/api/portraits/women/44.jpg' },
+    { id: 'C1240003', name: 'Sami Yusuf', location: 'Wadajir', status: 'Single',  gender: 'Male',   photo: 'https://randomuser.me/api/portraits/men/85.jpg' },
+  ];
+
+  let editingId = null;
+
+  function renderStudents() {
+    const tbody = document.getElementById('student-tbody');
+    tbody.innerHTML = '';
+    students.forEach(s => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><img class="student-photo" src="${s.photo}" alt="${s.name}"
+          onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=4a9fc4&color=fff'" /></td>
+        <td>${s.name}</td>
+        <td>${s.id}</td>
+        <td>${s.location}</td>
+        <td>${s.status}</td>
+        <td>${s.gender}</td>
+        <td><button class="btn-edit" onclick="openEdit('${s.id}')">Edit</button></td>
+        <td><button class="btn-delete" onclick="deleteStudent('${s.id}')">Delete</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('#sidebar ul li').forEach(li => li.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    if (el) el.classList.add('active');
+    if (name === 'students') renderStudents();
+  }
+
+  function openEdit(id) {
+    const s = students.find(x => x.id === id);
+    if (!s) return;
+    editingId = id;
+    document.getElementById('edit-name').value = s.name;
+    document.getElementById('edit-location').value = s.location;
+    document.getElementById('edit-status').value = s.status;
+    document.getElementById('edit-gender').value = s.gender;
+    document.getElementById('edit-modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('edit-modal').classList.remove('open');
+    editingId = null;
+  }
+
+  function saveEdit() {
+    const s = students.find(x => x.id === editingId);
+    if (!s) return;
+    s.name     = document.getElementById('edit-name').value;
+    s.location = document.getElementById('edit-location').value;
+    s.status   = document.getElementById('edit-status').value;
+    s.gender   = document.getElementById('edit-gender').value;
+    closeModal();
+    renderStudents();
+  }
+
+  function deleteStudent(id) {
+    if (confirm('Delete this student?')) {
+      students = students.filter(s => s.id !== id);
+      renderStudents();
+    }
+  }
+
+  function saveSettings() {
+    alert('Settings saved!');
+  }
+
+  renderStudents();
+</script>
+</body>
+</html>
